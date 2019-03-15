@@ -1,0 +1,4 @@
+github.com/devopsfaith/krakend v0.0.0-20190306181519-f4927628fef8 h1:JZ1xxPXQ/mZandtL0ZQONraJPcYRp7Ffy2HmaLtjEN0=
+github.com/devopsfaith/krakend v0.0.0-20190306181519-f4927628fef8/go.mod h1:yxQ154W+9WspAsoGcnsttb30YJHuSbDZivUdLH09PiA=
+github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d h1:ToACqFOOYVdz7PswtVcAawttvtdGlLhoAsXdhYFQeEI=
+github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
