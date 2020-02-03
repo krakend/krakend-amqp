@@ -5,9 +5,15 @@ go:
     - "1.12.x"
     - "1.11.x"
 
+addons:
+  apt:
+    packages:
+    - rabbitmq-server 
+
 services:
   - rabbitmq
 
 script:
+    - systemctl status rabbitmq-server
     - go build
     - go test -tags integration
