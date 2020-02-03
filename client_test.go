@@ -38,8 +38,9 @@ func Test(t *testing.T) {
 		t.Error("this backend factory shouldn't be called")
 		return proxy.NoopProxy
 	})
+	amqpHost := fmt.Sprintf("amqp://guest:guest@%s:5672", *rabbitmqHost)
 	consumerProxy := bf(&config.Backend{
-		Host: []string{fmt.Sprintf("amqp://guest:guest@%s:5672", *rabbitmqHost)},
+		Host: []string{amqpHost},
 		ExtraConfig: config.ExtraConfig{
 			consumerNamespace: map[string]interface{}{
 				"name":           "queue-1",
@@ -58,7 +59,7 @@ func Test(t *testing.T) {
 	})
 
 	producerProxy := bf(&config.Backend{
-		Host: []string{fmt.Sprintf("amqp://guest:guest@%s:5672", *rabbitmqHost)},
+		Host: []string{amqpHost},
 		ExtraConfig: config.ExtraConfig{
 			producerNamespace: map[string]interface{}{
 				"name":      "queue-1",
