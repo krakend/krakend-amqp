@@ -17,6 +17,7 @@ import (
 const consumerNamespace = "github.com/devopsfaith/krakend-amqp/consume"
 
 var errNoConsumerCfgDefined = errors.New("no amqp consumer defined")
+var errNoBackendHostDefined = errors.New("no host backend defined")
 
 type consumerCfg struct {
 	queueCfg
@@ -25,6 +26,10 @@ type consumerCfg struct {
 }
 
 func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend) (proxy.Proxy, error) {
+	if len(remote.Host) < 1 {
+		return proxy.NoopProxy, errNoBackendHostDefined
+	}
+
 	dns := remote.Host[0]
 
 	cfg, err := getConsumerConfig(remote)
