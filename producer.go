@@ -43,6 +43,9 @@ type producerCfg struct {
 }
 
 func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend) (proxy.Proxy, error) {
+	if len(remote.Host) < 1 {
+		return proxy.NoopProxy, errNoBackendHostDefined
+	}
 	dns := remote.Host[0]
 
 	cfg, err := getProducerConfig(remote)
