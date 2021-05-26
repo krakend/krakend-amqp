@@ -10,8 +10,8 @@ import (
 
 	"github.com/streadway/amqp"
 
-	"github.com/devopsfaith/krakend/config"
-	"github.com/devopsfaith/krakend/proxy"
+	"github.com/luraproject/lura/config"
+	"github.com/luraproject/lura/proxy"
 )
 
 const consumerNamespace = "github.com/devopsfaith/krakend-amqp/consume"
