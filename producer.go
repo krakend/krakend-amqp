@@ -11,8 +11,8 @@ import (
 
 	"github.com/streadway/amqp"
 
-	"github.com/devopsfaith/krakend/config"
-	"github.com/devopsfaith/krakend/proxy"
+	"github.com/luraproject/lura/config"
+	"github.com/luraproject/lura/proxy"
 )
 
 const producerNamespace = "github.com/devopsfaith/krakend-amqp/produce"
