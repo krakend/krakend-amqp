@@ -15,6 +15,7 @@ import (
 )
 
 const consumerNamespace = "github.com/devopsfaith/krakend-amqp/consume"
+const logPrefix = "[BACKEND][AMQP]"
 
 var errNoConsumerCfgDefined = errors.New("no amqp consumer defined")
 var errNoBackendHostDefined = errors.New("no host backend defined")
@@ -34,7 +35,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 
 	cfg, err := getConsumerConfig(remote)
 	if err != nil {
-		f.logger.Debug(fmt.Sprintf("AMQP: %s: %s", dns, err.Error()))
+		f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
 		return proxy.NoopProxy, err
 	}
 
@@ -47,7 +48,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 
 	ch, close, err := f.newChannel(dns)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
 		return proxy.NoopProxy, err
 	}
 
@@ -61,7 +62,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 		nil,
 	)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
 		close()
 		return proxy.NoopProxy, err
 	}
@@ -75,7 +76,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 		nil,
 	)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: declaring the queue for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("declaring the queue for %s/%s: %s", dns, cfg.Name, err.Error()))
 		close()
 		return proxy.NoopProxy, err
 	}
@@ -89,13 +90,13 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 			nil,
 		)
 		if err != nil {
-			f.logger.Error(fmt.Sprintf("AMQP: bindind the queue for %s/%s: %s", dns, cfg.Name, err.Error()))
+			f.logger.Error(logPrefix, fmt.Sprintf("Error bindind the queue for %s/%s: %s", dns, cfg.Name, err.Error()))
 		}
 	}
 
 	if cfg.PrefetchCount != 0 || cfg.PrefetchSize != 0 {
 		if err := ch.Qos(cfg.PrefetchCount, cfg.PrefetchSize, false); err != nil {
-			f.logger.Error(fmt.Sprintf("AMQP: setting the QoS for the consumer %s/%s: %s", dns, cfg.Name, err.Error()))
+			f.logger.Error(logPrefix, fmt.Sprintf("Error setting the QoS for the consumer %s/%s: %s", dns, cfg.Name, err.Error()))
 			close()
 			return proxy.NoopProxy, err
 		}
@@ -111,7 +112,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 		nil,
 	)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: setting up the consumer for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("Error setting up the consumer for %s/%s: %s", dns, cfg.Name, err.Error()))
 		close()
 		return proxy.NoopProxy, err
 	}

@@ -50,13 +50,13 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 
 	cfg, err := getProducerConfig(remote)
 	if err != nil {
-		f.logger.Debug(fmt.Sprintf("AMQP: %s: %s", dns, err.Error()))
+		f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
 		return proxy.NoopProxy, err
 	}
 
 	ch, close, err := f.newChannel(dns)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("Error getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
 		return proxy.NoopProxy, err
 	}
 
@@ -70,7 +70,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		nil,
 	)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("Error declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
 		close()
 		return proxy.NoopProxy, err
 	}
