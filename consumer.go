@@ -15,7 +15,6 @@ import (
 )
 
 const consumerNamespace = "github.com/devopsfaith/krakend-amqp/consume"
-const logPrefix = "[BACKEND][AMQP]"
 
 var errNoConsumerCfgDefined = errors.New("no amqp consumer defined")
 var errNoBackendHostDefined = errors.New("no host backend defined")
@@ -32,7 +31,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	}
 
 	dns := remote.Host[0]
-
+	logPrefix := "[BACKEND: " + remote.URLPattern + "][AMQP]"
 	cfg, err := getConsumerConfig(remote)
 	if err != nil {
 		f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
