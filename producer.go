@@ -51,7 +51,9 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 
 	cfg, err := getProducerConfig(remote)
 	if err != nil {
-		f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
+		if err != errNoProducerCfgDefined {
+			f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
+		}
 		return proxy.NoopProxy, err
 	}
 
@@ -80,6 +82,8 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		<-ctx.Done()
 		close()
 	}()
+
+	f.logger.Debug(logPrefix, "Producer attached")
 
 	return func(ctx context.Context, r *proxy.Request) (*proxy.Response, error) {
 		body, err := ioutil.ReadAll(r.Body)

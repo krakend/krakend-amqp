@@ -34,7 +34,9 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	logPrefix := "[BACKEND: " + remote.URLPattern + "][AMQP]"
 	cfg, err := getConsumerConfig(remote)
 	if err != nil {
-		f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
+		if err != errNoConsumerCfgDefined {
+			f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
+		}
 		return proxy.NoopProxy, err
 	}
 
@@ -118,6 +120,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 
 	f.consumers[dns+cfg.Name] = msgs
 
+	f.logger.Debug(logPrefix, "Consumer attached")
 	go func() {
 		<-ctx.Done()
 		close()
