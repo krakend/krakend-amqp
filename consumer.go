@@ -151,11 +151,11 @@ func consumerBackend(remote *config.Backend, msgs <-chan amqp.Delivery) proxy.Pr
 			var data map[string]interface{}
 			err := remote.Decoder(bytes.NewBuffer(msg.Body), &data)
 			if err != nil && err != io.EOF {
-				msg.Ack(false)
+				msg.Nack(false, true)
 				return nil, err
 			}
 
-			msg.Ack(true)
+			msg.Ack(false)
 
 			newResponse := proxy.Response{Data: data, IsComplete: true}
 			newResponse = ef.Format(newResponse)
