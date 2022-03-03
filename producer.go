@@ -11,8 +11,8 @@ import (
 
 	"github.com/streadway/amqp"
 
-	"github.com/luraproject/lura/config"
-	"github.com/luraproject/lura/proxy"
+	"github.com/luraproject/lura/v2/config"
+	"github.com/luraproject/lura/v2/proxy"
 )
 
 const producerNamespace = "github.com/devopsfaith/krakend-amqp/produce"
@@ -47,16 +47,19 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		return proxy.NoopProxy, errNoBackendHostDefined
 	}
 	dns := remote.Host[0]
+	logPrefix := "[BACKEND: " + remote.URLPattern + "][AMQP]"
 
 	cfg, err := getProducerConfig(remote)
 	if err != nil {
-		f.logger.Debug(fmt.Sprintf("AMQP: %s: %s", dns, err.Error()))
+		if err != errNoProducerCfgDefined {
+			f.logger.Debug(logPrefix, fmt.Sprintf("%s: %s", dns, err.Error()))
+		}
 		return proxy.NoopProxy, err
 	}
 
 	ch, close, err := f.newChannel(dns)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("Error getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
 		return proxy.NoopProxy, err
 	}
 
@@ -70,7 +73,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		nil,
 	)
 	if err != nil {
-		f.logger.Error(fmt.Sprintf("AMQP: declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
+		f.logger.Error(logPrefix, fmt.Sprintf("Error declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
 		close()
 		return proxy.NoopProxy, err
 	}
@@ -79,6 +82,8 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		<-ctx.Done()
 		close()
 	}()
+
+	f.logger.Debug(logPrefix, "Producer attached")
 
 	return func(ctx context.Context, r *proxy.Request) (*proxy.Response, error) {
 		body, err := ioutil.ReadAll(r.Body)
