@@ -3,7 +3,7 @@ module github.com/devopsfaith/krakend-amqp/v2
 go 1.17
 
 require (
-	github.com/luraproject/lura/v2 v2.0.0-rc
+	github.com/luraproject/lura/v2 v2.0.0
 	github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d
 	github.com/juju/ratelimit v1.0.1
 )
