@@ -66,7 +66,7 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 		Timeout:     cfg.Timeout,
 	}
 
-	opts.Logger.Info(fmt.Sprintf("[Service: AsyncAgent][AMQP][%s] Starting the consumer", cfg.Name))
+	opts.Logger.Info(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Starting the consumer", cfg.Name))
 	msgs, closeF, err := initConsumer(options, opts.Logger)
 	if err != nil {
 		return err
@@ -138,20 +138,20 @@ recvLoop:
 
 			if ok {
 				if err := msg.Ack(false); err != nil {
-					opts.Logger.Error(fmt.Sprintf("[Service: AsyncAgent][AMQP][%s] Ack: %s", cfg.Name, err))
+					opts.Logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Ack: %s", cfg.Name, err))
 					shouldExit.Store(true)
 				}
 				return
 			}
 
 			if err := msg.Nack(false, true); err != nil {
-				opts.Logger.Error(fmt.Sprintf("[Service: AsyncAgent][AMQP][%s] Nack: %s", cfg.Name, err))
+				opts.Logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Nack: %s", cfg.Name, err))
 				shouldExit.Store(true)
 			}
 		}()
 	}
 
-	opts.Logger.Warning(fmt.Sprintf("[Service: AsyncAgent][AMQP][%s] Consumer stopped", cfg.Name))
+	opts.Logger.Warning(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Consumer stopped", cfg.Name))
 
 	return err
 }
@@ -192,7 +192,7 @@ func newProcessor(ctx context.Context, cfg Subscriber, logger logging.Logger, ne
 		if err == nil {
 			return true
 		}
-		logger.Error(fmt.Sprintf("[Service: AsyncAgent][AMQP][%s] %s", cfg.Name, err.Error()))
+		logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] %s", cfg.Name, err.Error()))
 		return false
 
 	}
