@@ -43,7 +43,7 @@ func (f backendFactory) New(remote *config.Backend) proxy.Proxy {
 	return f.bf(remote)
 }
 
-func (f backendFactory) newChannel(path string) (*amqp.Channel, closer, error) {
+func (backendFactory) newChannel(path string) (*amqp.Channel, closer, error) {
 	conn, err := amqp.Dial(path)
 	if err != nil {
 		return nil, nopCloser, err
