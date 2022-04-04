@@ -57,7 +57,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		return proxy.NoopProxy, err
 	}
 
-	ch, close, err := f.newChannel(dns)
+	ch, closeF, err := f.newChannel(dns)
 	if err != nil {
 		f.logger.Error(logPrefix, fmt.Sprintf("Error getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
 		return proxy.NoopProxy, err
@@ -74,13 +74,13 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	)
 	if err != nil {
 		f.logger.Error(logPrefix, fmt.Sprintf("Error declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
-		close()
+		closeF()
 		return proxy.NoopProxy, err
 	}
 
 	go func() {
 		<-ctx.Done()
-		close()
+		closeF()
 	}()
 
 	f.logger.Debug(logPrefix, "Producer attached")

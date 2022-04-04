@@ -47,7 +47,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 		return consumerBackend(remote, msgs), nil
 	}
 
-	ch, close, err := f.newChannel(dns)
+	ch, closeF, err := f.newChannel(dns)
 	if err != nil {
 		f.logger.Error(logPrefix, fmt.Sprintf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
 		return proxy.NoopProxy, err
@@ -64,7 +64,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	)
 	if err != nil {
 		f.logger.Error(logPrefix, fmt.Sprintf("declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
-		close()
+		closeF()
 		return proxy.NoopProxy, err
 	}
 
@@ -78,7 +78,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	)
 	if err != nil {
 		f.logger.Error(logPrefix, fmt.Sprintf("declaring the queue for %s/%s: %s", dns, cfg.Name, err.Error()))
-		close()
+		closeF()
 		return proxy.NoopProxy, err
 	}
 
@@ -98,7 +98,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	if cfg.PrefetchCount != 0 || cfg.PrefetchSize != 0 {
 		if err := ch.Qos(cfg.PrefetchCount, cfg.PrefetchSize, false); err != nil {
 			f.logger.Error(logPrefix, fmt.Sprintf("Error setting the QoS for the consumer %s/%s: %s", dns, cfg.Name, err.Error()))
-			close()
+			closeF()
 			return proxy.NoopProxy, err
 		}
 	}
@@ -114,7 +114,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	)
 	if err != nil {
 		f.logger.Error(logPrefix, fmt.Sprintf("Error setting up the consumer for %s/%s: %s", dns, cfg.Name, err.Error()))
-		close()
+		closeF()
 		return proxy.NoopProxy, err
 	}
 
@@ -123,7 +123,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	f.logger.Debug(logPrefix, "Consumer attached")
 	go func() {
 		<-ctx.Done()
-		close()
+		closeF()
 	}()
 
 	return consumerBackend(remote, msgs), nil
