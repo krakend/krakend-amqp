@@ -198,7 +198,7 @@ func newProcessor(ctx context.Context, cfg Subscriber, logger logging.Logger, ne
 	}
 }
 
-func initConsumer(opts consumerOptions, logger logging.Logger) (msgs <-chan amqp.Delivery, closeF func(), err error) {
+func initConsumer(opts consumerOptions, _ logging.Logger) (msgs <-chan amqp.Delivery, closeF func(), err error) {
 	closeF = func() {}
 
 	conn, err1 := amqp.Dial(opts.Host)
