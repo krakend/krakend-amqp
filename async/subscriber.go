@@ -82,7 +82,7 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 	shouldExit.Store(false)
 	defer opts.PingTicker.Stop()
 
-	waitIfRequired := func() { return }
+	waitIfRequired := func() {}
 	if cfg.MaxRate > 0 {
 		capacity := int64(cfg.MaxRate)
 		if capacity == 0 {
