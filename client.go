@@ -49,6 +49,9 @@ func (backendFactory) newChannel(path string) (*amqp.Channel, closer, error) {
 		return nil, nopCloser, err
 	}
 	ch, err := conn.Channel()
+	if err != nil {
+		return nil, nopCloser, err
+	}
 	return ch, conn.Close, nil
 }
 
