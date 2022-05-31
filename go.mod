@@ -1,4 +1,4 @@
-module github.com/devopsfaith/krakend-amqp/v2
+module github.com/krakendio/krakend-amqp/v2
 
 go 1.17
 
@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	github.com/devopsfaith/flatmap v0.0.0-20200601181759-8521186182fc // indirect
+	github.com/krakendio/flatmap v0.0.0-20200601181759-8521186182fc // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
