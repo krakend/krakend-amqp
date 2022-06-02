@@ -16,8 +16,10 @@ import (
 
 const consumerNamespace = "github.com/devopsfaith/krakend-amqp/consume"
 
-var errNoConsumerCfgDefined = errors.New("no amqp consumer defined")
-var errNoBackendHostDefined = errors.New("no host backend defined")
+var (
+	errNoConsumerCfgDefined = errors.New("no amqp consumer defined")
+	errNoBackendHostDefined = errors.New("no host backend defined")
+)
 
 type consumerCfg struct {
 	queueCfg
