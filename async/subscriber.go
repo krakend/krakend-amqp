@@ -194,7 +194,6 @@ func newProcessor(ctx context.Context, cfg Subscriber, logger logging.Logger, ne
 		}
 		logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] %s", cfg.Name, err.Error()))
 		return false
-
 	}
 }
 
