@@ -3,14 +3,14 @@ module github.com/krakendio/krakend-amqp/v2
 go 1.17
 
 require (
-	github.com/luraproject/lura/v2 v2.0.0
-	github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d
 	github.com/juju/ratelimit v1.0.1
+	github.com/luraproject/lura/v2 v2.0.0-20220601150625-abb94fb9730d
+	github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d
 )
 
 require (
-	github.com/krakendio/flatmap v0.0.0-20200601181759-8521186182fc // indirect
 	github.com/kr/pretty v0.3.0 // indirect
+	github.com/krakendio/flatmap v0.0.0-20220531185225-4cb0ad6fbedd // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
