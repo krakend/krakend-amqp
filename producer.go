@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"sync"
 	"time"
@@ -73,7 +73,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	}()
 
 	return func(ctx context.Context, r *proxy.Request) (*proxy.Response, error) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}

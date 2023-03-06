@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"sync/atomic"
 	"time"
 
@@ -182,7 +182,7 @@ func newProcessor(ctx context.Context, cfg Subscriber, logger logging.Logger, ne
 		req := proxy.Request{
 			Params:  map[string]string{},
 			Headers: map[string][]string{},
-			Body:    ioutil.NopCloser(bytes.NewBuffer(msg)),
+			Body:    io.NopCloser(bytes.NewBuffer(msg)),
 		}
 		contxt, cancel := context.WithTimeout(ctx, cfg.Timeout)
 		defer cancel()

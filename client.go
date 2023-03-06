@@ -95,6 +95,9 @@ func (h *connectionHandler) connect(ctx context.Context, dns string) error {
 		h.mu.Unlock()
 	}()
 	h.logger.Debug(h.logPrefix, "reconnecting to host:", dns)
+	if h.retries == 0 {
+		h.retries = 1
+	}
 	for i := 0; i < h.retries; i++ {
 		<-time.After(h.backoff(i))
 		res = h.newConnection(dns)
