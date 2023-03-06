@@ -57,14 +57,20 @@ type connectionHandler struct {
 
 // newConnectionHandler returns a configured connectionHandler
 func newConnectionHandler(ctx context.Context, l logging.Logger, maxRetries int, strategy, logPrefix string) connectionHandler {
-	return connectionHandler{
+	c := connectionHandler{
 		logger:       l,
 		logPrefix:    logPrefix,
 		mu:           new(sync.Mutex),
 		reconnecting: new(atomic.Bool),
+		conn:         connection{},
 		retries:      maxRetries,
 		backoff:      backoff.GetByName(strategy),
 	}
+	go func() {
+		<-ctx.Done()
+		c.conn.Close()
+	}()
+	return c
 }
 
 // newConnection should only be used via connect() beacause it doesn't Lock
@@ -87,7 +93,7 @@ func (h *connectionHandler) newConnection(path string) error {
 
 // connect tries to connect to the service with retries given the configuration
 // strategy
-func (h *connectionHandler) connect(ctx context.Context, dns string) error {
+func (h *connectionHandler) connect(dns string) error {
 	var res error
 	h.mu.Lock()
 	defer func() {

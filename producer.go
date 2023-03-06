@@ -61,7 +61,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	cfg.LogPrefix = logPrefix
 
 	connHandler := newConnectionHandler(ctx, f.logger, cfg.MaxRetries, cfg.Backoff, cfg.LogPrefix)
-	if err := connHandler.newProducer(ctx, dns, cfg); err != nil {
+	if err := connHandler.newProducer(dns, cfg); err != nil {
 		f.logger.Error(logPrefix, err.Error())
 		connHandler.conn.Close()
 	}
@@ -110,7 +110,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 			if connHandler.reconnecting.CompareAndSwap(false, true) {
 				go func() {
 					connMutex.Lock()
-					if err := connHandler.newProducer(ctx, dns, cfg); err != nil {
+					if err := connHandler.newProducer(dns, cfg); err != nil {
 						f.logger.Debug(logPrefix, err.Error())
 					}
 					connMutex.Unlock()
@@ -131,7 +131,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 			}
 			go func() {
 				connMutex.Lock()
-				if err = connHandler.newProducer(ctx, dns, cfg); err != nil {
+				if err = connHandler.newProducer(dns, cfg); err != nil {
 					f.logger.Debug(logPrefix, err.Error())
 				}
 				connMutex.Unlock()
@@ -143,8 +143,8 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	}, nil
 }
 
-func (h *connectionHandler) newProducer(ctx context.Context, dns string, cfg *producerCfg) error {
-	if err := h.connect(ctx, dns); err != nil {
+func (h *connectionHandler) newProducer(dns string, cfg *producerCfg) error {
+	if err := h.connect(dns); err != nil {
 		return fmt.Errorf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error())
 	}
 

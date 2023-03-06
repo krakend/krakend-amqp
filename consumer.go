@@ -45,7 +45,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	cfg.LogPrefix = logPrefix
 
 	connHandler := newConnectionHandler(ctx, f.logger, cfg.MaxRetries, cfg.Backoff, cfg.LogPrefix)
-	msgs, err := connHandler.newConsumer(ctx, dns, cfg)
+	msgs, err := connHandler.newConsumer(dns, cfg)
 	if err != nil {
 		f.logger.Debug(logPrefix, err.Error())
 	}
@@ -66,7 +66,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 				if connHandler.reconnecting.CompareAndSwap(false, true) {
 					go func() {
 						connMutex.Lock()
-						msgs, err = connHandler.newConsumer(ctx, dns, cfg)
+						msgs, err = connHandler.newConsumer(dns, cfg)
 						if err != nil {
 							f.logger.Debug(logPrefix, err.Error())
 						}
@@ -103,10 +103,11 @@ func getConsumerConfig(remote *config.Backend) (*consumerCfg, error) {
 	return cfg, err
 }
 
-func (h *connectionHandler) newConsumer(ctx context.Context, dns string, cfg *consumerCfg) (<-chan amqp.Delivery, error) {
+func (h *connectionHandler) newConsumer(dns string, cfg *consumerCfg) (<-chan amqp.Delivery, error) {
 	emptyChan := make(chan amqp.Delivery)
 	close(emptyChan)
-	if err := h.connect(ctx, dns); err != nil {
+
+	if err := h.connect(dns); err != nil {
 		return emptyChan, fmt.Errorf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error())
 	}
 
