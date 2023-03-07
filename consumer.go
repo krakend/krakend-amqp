@@ -44,8 +44,8 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	}
 	cfg.LogPrefix = logPrefix
 
-	connHandler := newConnectionHandler(ctx, f.logger, cfg.MaxRetries, cfg.Backoff, cfg.LogPrefix)
-	msgs, err := connHandler.newConsumer(dns, cfg)
+	connHandler := newConnectionHandler(ctx, f.logger, cfg.LogPrefix)
+	msgs, err := connHandler.newConsumer(dns, cfg, 3, "")
 	if err != nil {
 		f.logger.Debug(logPrefix, err.Error())
 	}
@@ -66,7 +66,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 				if connHandler.reconnecting.CompareAndSwap(false, true) {
 					go func() {
 						connMutex.Lock()
-						msgs, err = connHandler.newConsumer(dns, cfg)
+						msgs, err = connHandler.newConsumer(dns, cfg, cfg.MaxRetries, cfg.Backoff)
 						if err != nil {
 							f.logger.Debug(logPrefix, err.Error())
 						}
@@ -103,11 +103,11 @@ func getConsumerConfig(remote *config.Backend) (*consumerCfg, error) {
 	return cfg, err
 }
 
-func (h *connectionHandler) newConsumer(dns string, cfg *consumerCfg) (<-chan amqp.Delivery, error) {
+func (h *connectionHandler) newConsumer(dns string, cfg *consumerCfg, maxRetries int, bckoff string) (<-chan amqp.Delivery, error) {
 	emptyChan := make(chan amqp.Delivery)
 	close(emptyChan)
 
-	if err := h.connect(dns); err != nil {
+	if err := h.connect(dns, maxRetries, bckoff); err != nil {
 		return emptyChan, fmt.Errorf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error())
 	}
 

@@ -51,20 +51,16 @@ type connectionHandler struct {
 	mu           *sync.Mutex
 	reconnecting *atomic.Bool
 	conn         connection
-	retries      int
-	backoff      backoff.TimeToWaitBeforeRetry
 }
 
 // newConnectionHandler returns a configured connectionHandler
-func newConnectionHandler(ctx context.Context, l logging.Logger, maxRetries int, strategy, logPrefix string) connectionHandler {
+func newConnectionHandler(ctx context.Context, l logging.Logger, logPrefix string) connectionHandler {
 	c := connectionHandler{
 		logger:       l,
 		logPrefix:    logPrefix,
 		mu:           new(sync.Mutex),
 		reconnecting: new(atomic.Bool),
 		conn:         connection{},
-		retries:      maxRetries,
-		backoff:      backoff.GetByName(strategy),
 	}
 	go func() {
 		<-ctx.Done()
@@ -93,24 +89,25 @@ func (h *connectionHandler) newConnection(path string) error {
 
 // connect tries to connect to the service with retries given the configuration
 // strategy
-func (h *connectionHandler) connect(dns string) error {
+func (h *connectionHandler) connect(dns string, maxRetries int, bckoff string) error {
 	var res error
 	h.mu.Lock()
 	defer func() {
 		h.reconnecting.Store(false)
 		h.mu.Unlock()
 	}()
-	h.logger.Debug(h.logPrefix, "reconnecting to host:", dns)
-	if h.retries == 0 {
-		h.retries = 1
+	bo := backoff.GetByName(bckoff)
+	h.logger.Debug(h.logPrefix, "connecting to host:", dns)
+	if maxRetries == 0 {
+		maxRetries = 1
 	}
-	for i := 0; i < h.retries; i++ {
-		<-time.After(h.backoff(i))
+	for i := 0; i < maxRetries; i++ {
+		<-time.After(bo(i))
 		res = h.newConnection(dns)
 		if res == nil {
 			return nil
 		}
-		h.logger.Debug(h.logPrefix, "reconnection attempt", i+1, res)
+		h.logger.Debug(h.logPrefix, "connection attempt", i+1, res)
 	}
 	return res
 }
