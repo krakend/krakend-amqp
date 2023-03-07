@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
 
 	"github.com/streadway/amqp"
 
@@ -32,7 +31,6 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	if len(remote.Host) < 1 {
 		return proxy.NoopProxy, errNoBackendHostDefined
 	}
-	connMutex := new(sync.Mutex)
 	dns := remote.Host[0]
 	logPrefix := "[BACKEND: " + remote.URLPattern + "][AMQP]"
 	cfg, err := getConsumerConfig(remote)
@@ -45,7 +43,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	cfg.LogPrefix = logPrefix
 
 	connHandler := newConnectionHandler(ctx, f.logger, cfg.LogPrefix)
-	msgs, err := connHandler.newConsumer(dns, cfg, 3, "")
+	msgs, err := connHandler.newConsumer(dns, cfg, DefaultStartupRetries, DefaultBackoffStrategy)
 	if err != nil {
 		f.logger.Debug(logPrefix, err.Error())
 	}
@@ -63,14 +61,15 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 			return nil, ctx.Err()
 		case msg, ok := <-msgs:
 			if !ok {
+				// executed here instead of in the connection manager `connect` method
+				// to avoid launching too many goroutines that will do nothing because
+				// the atomic.Bool will be locked
 				if connHandler.reconnecting.CompareAndSwap(false, true) {
 					go func() {
-						connMutex.Lock()
 						msgs, err = connHandler.newConsumer(dns, cfg, cfg.MaxRetries, cfg.Backoff)
 						if err != nil {
 							f.logger.Debug(logPrefix, err.Error())
 						}
-						connMutex.Unlock()
 					}()
 				}
 				return nil, fmt.Errorf("connection not available, trying to reconnect")
@@ -103,6 +102,7 @@ func getConsumerConfig(remote *config.Backend) (*consumerCfg, error) {
 	return cfg, err
 }
 
+// newConsumer needs to execute connect first because it blocks the execution
 func (h *connectionHandler) newConsumer(dns string, cfg *consumerCfg, maxRetries int, bckoff string) (<-chan amqp.Delivery, error) {
 	emptyChan := make(chan amqp.Delivery)
 	close(emptyChan)

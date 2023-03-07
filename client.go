@@ -2,7 +2,6 @@ package amqp
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +11,11 @@ import (
 	"github.com/luraproject/lura/v2/config"
 	"github.com/luraproject/lura/v2/logging"
 	"github.com/luraproject/lura/v2/proxy"
+)
+
+var (
+	DefaultBackoffStrategy = ""
+	DefaultStartupRetries  = 3
 )
 
 // NewBackendFactory returns a proxy.BackendFactory that setup AMQP backends
@@ -48,7 +52,6 @@ func (f backendFactory) New(remote *config.Backend) proxy.Proxy {
 type connectionHandler struct {
 	logger       logging.Logger
 	logPrefix    string
-	mu           *sync.Mutex
 	reconnecting *atomic.Bool
 	conn         connection
 }
@@ -58,7 +61,6 @@ func newConnectionHandler(ctx context.Context, l logging.Logger, logPrefix strin
 	c := connectionHandler{
 		logger:       l,
 		logPrefix:    logPrefix,
-		mu:           new(sync.Mutex),
 		reconnecting: new(atomic.Bool),
 		conn:         connection{},
 	}
@@ -90,11 +92,14 @@ func (h *connectionHandler) newConnection(path string) error {
 // connect tries to connect to the service with retries given the configuration
 // strategy
 func (h *connectionHandler) connect(dns string, maxRetries int, bckoff string) error {
+	// This block is executed in the handlers to avoid launching too many goroutines
+	// that will do nothing because of the atomic.Bool set to true
+	// if !h.reconnecting.CompareAndSwap(false, true) {
+	// 	return fmt.Errorf("already reconnecting")
+	// }
 	var res error
-	h.mu.Lock()
 	defer func() {
 		h.reconnecting.Store(false)
-		h.mu.Unlock()
 	}()
 	bo := backoff.GetByName(bckoff)
 	h.logger.Debug(h.logPrefix, "connecting to host:", dns)

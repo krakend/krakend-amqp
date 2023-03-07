@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/streadway/amqp"
@@ -47,7 +46,6 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	if len(remote.Host) < 1 {
 		return proxy.NoopProxy, errNoBackendHostDefined
 	}
-	connMutex := new(sync.Mutex)
 	dns := remote.Host[0]
 	logPrefix := "[BACKEND: " + remote.URLPattern + "][AMQP]"
 
@@ -61,7 +59,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	cfg.LogPrefix = logPrefix
 
 	connHandler := newConnectionHandler(ctx, f.logger, cfg.LogPrefix)
-	if err := connHandler.newProducer(dns, cfg, 3, ""); err != nil {
+	if err := connHandler.newProducer(dns, cfg, DefaultStartupRetries, DefaultBackoffStrategy); err != nil {
 		f.logger.Error(logPrefix, err.Error())
 		connHandler.conn.Close()
 	}
@@ -109,11 +107,9 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		if connHandler.conn.IsClosed() {
 			if connHandler.reconnecting.CompareAndSwap(false, true) {
 				go func() {
-					connMutex.Lock()
 					if err := connHandler.newProducer(dns, cfg, cfg.MaxRetries, cfg.Backoff); err != nil {
 						f.logger.Debug(logPrefix, err.Error())
 					}
-					connMutex.Unlock()
 				}()
 			}
 			return nil, fmt.Errorf("connection not available, trying to reconnect")
@@ -130,11 +126,9 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 				return nil, err
 			}
 			go func() {
-				connMutex.Lock()
 				if err = connHandler.newProducer(dns, cfg, cfg.MaxRetries, cfg.Backoff); err != nil {
 					f.logger.Debug(logPrefix, err.Error())
 				}
-				connMutex.Unlock()
 			}()
 			return nil, err
 		}
@@ -143,6 +137,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 	}, nil
 }
 
+// newProducer needs to execute connect first because it blocks the execution
 func (h *connectionHandler) newProducer(dns string, cfg *producerCfg, maxRetries int, bckoff string) error {
 	if err := h.connect(dns, maxRetries, bckoff); err != nil {
 		return fmt.Errorf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error())
