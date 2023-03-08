@@ -91,6 +91,8 @@ func (h *connectionHandler) newConnection(path string) error {
 
 // connect tries to connect to the service with retries given the configuration
 // strategy
+// WARNING: this function should not be called before setting the reconnecting flag to true
+// using the `CompareAndSwap(false, true)`. as a lock method.
 func (h *connectionHandler) connect(dns string, maxRetries int, bckoff string) error {
 	// This block is executed in the handlers to avoid launching too many goroutines
 	// that will do nothing because of the atomic.Bool set to true
