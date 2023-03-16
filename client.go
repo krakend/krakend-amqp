@@ -2,6 +2,7 @@ package amqp
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -104,7 +105,7 @@ func (h *connectionHandler) connect(dns string, maxRetries int, bckoff string) e
 		h.reconnecting.Store(false)
 	}()
 	bo := backoff.GetByName(bckoff)
-	h.logger.Debug(h.logPrefix, "connecting to host:", dns)
+	h.logger.Debug(h.logPrefix, "Connecting to host:", dns)
 	if maxRetries == 0 {
 		maxRetries = 1
 	}
@@ -112,9 +113,10 @@ func (h *connectionHandler) connect(dns string, maxRetries int, bckoff string) e
 		<-time.After(bo(i))
 		res = h.newConnection(dns)
 		if res == nil {
+			h.logger.Info(fmt.Sprintf("Connection attempt #%d:  Successfully connected", i+1))
 			return nil
 		}
-		h.logger.Debug(h.logPrefix, "connection attempt", i+1, res)
+		h.logger.Debug(h.logPrefix, fmt.Sprintf("Connection attempt #%d: %s", i+1, res))
 	}
 	return res
 }
