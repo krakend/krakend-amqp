@@ -43,7 +43,7 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 	}
 	cfg.LogPrefix = logPrefix
 
-	if cfg.MaxRetries == 0 {
+	if cfg.MaxRetries <= 0 {
 		cfg.MaxRetries = math.MaxInt64
 	}
 
