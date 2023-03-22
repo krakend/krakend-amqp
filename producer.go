@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"math"
 	"strconv"
 	"time"
 
@@ -56,37 +57,26 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		}
 		return proxy.NoopProxy, err
 	}
+	cfg.LogPrefix = logPrefix
 
-	ch, closeF, err := f.newChannel(dns)
-	if err != nil {
-		f.logger.Error(logPrefix, fmt.Sprintf("Error getting the channel for %s/%s: %s", dns, cfg.Name, err.Error()))
-		return proxy.NoopProxy, err
+	if cfg.MaxRetries <= 0 {
+		cfg.MaxRetries = math.MaxInt64
 	}
 
-	err = ch.ExchangeDeclare(
-		cfg.Exchange, // name
-		"topic",      // type
-		cfg.Durable,
-		cfg.Delete,
-		cfg.Exclusive,
-		cfg.NoWait,
-		nil,
-	)
-	if err != nil {
-		f.logger.Error(logPrefix, fmt.Sprintf("Error declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error()))
-		closeF()
-		return proxy.NoopProxy, err
+	connHandler := newConnectionHandler(ctx, f.logger, cfg.LogPrefix)
+	if err := connHandler.newProducer(dns, cfg, DefaultStartupRetries, DefaultBackoffStrategy); err != nil {
+		f.logger.Error(logPrefix, err.Error())
+		connHandler.conn.Close()
 	}
-
-	go func() {
-		<-ctx.Done()
-		closeF()
-	}()
 
 	f.logger.Debug(logPrefix, "Producer attached")
+	go func() {
+		<-ctx.Done()
+		connHandler.conn.Close()
+	}()
 
 	return func(ctx context.Context, r *proxy.Request) (*proxy.Response, error) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -119,16 +109,57 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 			}
 		}
 
-		err = ch.Publish(
+		if connHandler.conn.IsClosed() {
+			if connHandler.reconnecting.CompareAndSwap(false, true) {
+				go func() {
+					if err := connHandler.newProducer(dns, cfg, cfg.MaxRetries, cfg.Backoff); err != nil {
+						f.logger.Debug(logPrefix, err.Error())
+					}
+				}()
+			}
+			return nil, fmt.Errorf("connection not available, trying to reconnect")
+		}
+
+		if err := connHandler.conn.ch.Publish(
 			cfg.Exchange,
 			r.Params[cfg.RoutingKey],
 			cfg.Mandatory,
 			cfg.Immediate,
 			pub,
-		)
-		if err != nil {
+		); err != nil {
+			if err != amqp.ErrClosed || !connHandler.reconnecting.CompareAndSwap(false, true) {
+				return nil, err
+			}
+			go func() {
+				if err = connHandler.newProducer(dns, cfg, cfg.MaxRetries, cfg.Backoff); err != nil {
+					f.logger.Debug(logPrefix, err.Error())
+				}
+			}()
 			return nil, err
 		}
+
 		return &proxy.Response{IsComplete: true}, nil
 	}, nil
+}
+
+// newProducer needs to execute connect first because it blocks the execution
+func (h *connectionHandler) newProducer(dns string, cfg *producerCfg, maxRetries int, bckoff string) error {
+	if err := h.connect(dns, maxRetries, bckoff); err != nil {
+		return fmt.Errorf("getting the channel for %s/%s: %s", dns, cfg.Name, err.Error())
+	}
+
+	if err := h.conn.ch.ExchangeDeclare(
+		cfg.Exchange, // name
+		"topic",      // type
+		cfg.Durable,
+		cfg.Delete,
+		cfg.Exclusive,
+		cfg.NoWait,
+		nil,
+	); err != nil {
+		h.conn.Close()
+		return fmt.Errorf("declaring the exchange for %s/%s: %s", dns, cfg.Name, err.Error())
+	}
+
+	return nil
 }

@@ -8,7 +8,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -83,7 +83,7 @@ func Test(t *testing.T) {
 				"Content-Type": {"application/json"},
 			},
 			Params: map[string]string{"routing_key": "some_value"},
-			Body:   ioutil.NopCloser(bytes.NewBufferString(fmt.Sprintf("{\"foo\":\"bar\",\"some\":%d}", i))),
+			Body:   io.NopCloser(bytes.NewBufferString(fmt.Sprintf("{\"foo\":\"bar\",\"some\":%d}", i))),
 		})
 		if err != nil {
 			t.Error(err)
