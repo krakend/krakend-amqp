@@ -9,6 +9,7 @@ import (
 	"math"
 	"strconv"
 	"time"
+	"unicode"
 
 	"github.com/streadway/amqp"
 
@@ -109,6 +110,11 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 			}
 		}
 
+		routingKey := cfg.RoutingKey
+		if isFirstLetterUppercase(cfg.RoutingKey) {
+			routingKey = r.Params[cfg.RoutingKey]
+		}
+
 		if connHandler.conn.IsClosed() {
 			if connHandler.reconnecting.CompareAndSwap(false, true) {
 				go func() {
@@ -122,7 +128,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 
 		if err := connHandler.conn.ch.Publish(
 			cfg.Exchange,
-			r.Params[cfg.RoutingKey],
+			routingKey,
 			cfg.Mandatory,
 			cfg.Immediate,
 			pub,
@@ -162,4 +168,9 @@ func (h *connectionHandler) newProducer(dns string, cfg *producerCfg, maxRetries
 	}
 
 	return nil
+}
+
+// IsFirstLetterUppercase checks if the first letter of a string is uppercase.
+func isFirstLetterUppercase(s string) bool {
+	return len(s) > 0 && unicode.IsUpper(rune(s[0]))
 }
