@@ -9,7 +9,6 @@ import (
 	"math"
 	"strconv"
 	"time"
-	"unicode"
 
 	"github.com/streadway/amqp"
 
@@ -35,13 +34,14 @@ func getProducerConfig(remote *config.Backend) (*producerCfg, error) {
 
 type producerCfg struct {
 	queueCfg
-	Mandatory     bool   `json:"mandatory"`
-	Immediate     bool   `json:"immediate"`
-	ExpirationKey string `json:"exp_key"`
-	ReplyToKey    string `json:"reply_to_key"`
-	MessageIdKey  string `json:"msg_id_key"`
-	PriorityKey   string `json:"priority_key"`
-	RoutingKey    string `json:"routing_key"`
+	Mandatory        bool   `json:"mandatory"`
+	Immediate        bool   `json:"immediate"`
+	ExpirationKey    string `json:"exp_key"`
+	ReplyToKey       string `json:"reply_to_key"`
+	MessageIdKey     string `json:"msg_id_key"`
+	PriorityKey      string `json:"priority_key"`
+	RoutingKey       string `json:"routing_key"`
+	StaticRoutingKey bool   `json:"static_routing_key"`
 }
 
 func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend) (proxy.Proxy, error) {
@@ -111,7 +111,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		}
 
 		routingKey := cfg.RoutingKey
-		if isFirstLetterUppercase(cfg.RoutingKey) {
+		if !cfg.StaticRoutingKey {
 			routingKey = r.Params[cfg.RoutingKey]
 		}
 
@@ -168,9 +168,4 @@ func (h *connectionHandler) newProducer(dns string, cfg *producerCfg, maxRetries
 	}
 
 	return nil
-}
-
-// IsFirstLetterUppercase checks if the first letter of a string is uppercase.
-func isFirstLetterUppercase(s string) bool {
-	return len(s) > 0 && unicode.IsUpper(rune(s[0]))
 }
