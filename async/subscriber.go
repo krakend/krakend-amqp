@@ -85,13 +85,15 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 
 	waitIfRequired := func() {}
 	if cfg.MaxRate > 0 {
-		capacity := int64(cfg.MaxRate)
+		capacity := uint64(cfg.MaxRate)
 		if capacity == 0 {
 			capacity = 1
 		}
 		bucket := ratelimit.NewTokenBucket(cfg.MaxRate, capacity)
-		// TODO: check if this is Ok:
-		pollingTime := time.Millisecond * 10
+		// We wait enough time to allow to
+		// have at least an extra token (even some other goroutine
+		// might have consumed it)
+		pollingTime := time.Nanosecond * time.Duration(1e9/cfg.MaxRate)
 		waitIfRequired = func() {
 			for !bucket.Allow() {
 				time.Sleep(pollingTime)
