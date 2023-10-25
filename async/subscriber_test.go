@@ -142,7 +142,6 @@ func publish(host, exchange string, iterations int) error {
 }
 
 func TestRateLimited(t *testing.T) {
-
 	t.Errorf("can this fail, please?")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	host := "amqp://guest:guest@localhost:5672/"
