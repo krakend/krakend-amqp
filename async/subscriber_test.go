@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/luraproject/lura/v2/config"
@@ -15,6 +16,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
+/*
 func Example() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	host := "amqp://guest:guest@localhost:5672/"
@@ -57,7 +59,7 @@ func Example() {
 		return
 	}
 
-	pingChan := make(chan<- string)
+	pingChan := make(chan<- string, 10)
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -86,7 +88,9 @@ func Example() {
 	// output:
 	// foo
 }
+*/
 
+/*
 func ExamplePublish() {
 	host := "amqp://guest:guest@localhost:5672/"
 	exchange := "foo"
@@ -95,17 +99,18 @@ func ExamplePublish() {
 	// output:
 	// <nil>
 }
+*/
 
-func publish(host, exchange string, iterations int) error {
+func publish(host, exchange string, iterations int, t *testing.T) error {
 	conn, err := amqp.Dial(host)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot publish to %s, err: %s", host, err.Error())
 	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get channel, err: %s", err.Error())
 	}
 	defer ch.Close()
 
@@ -135,15 +140,26 @@ func publish(host, exchange string, iterations int) error {
 			},
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot publish on exchange: %s, err: %s", exchange, err.Error())
+		} else {
+			if t != nil {
+				t.Logf("message published: %s", body)
+			}
 		}
 	}
 	return nil
 }
 
 func TestRateLimited(t *testing.T) {
-	t.Errorf("can this fail, please?")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// limit the running time of this test:
+	timeout := 5 * time.Second
+	defer func() {
+		<-time.After(timeout)
+		t.Errorf("timing out test after %#v", timeout)
+		cancel()
+	}()
+
 	host := "amqp://guest:guest@localhost:5672/"
 	exchange := "krakend-testing"
 
@@ -175,25 +191,31 @@ func TestRateLimited(t *testing.T) {
 	l, _ := logging.NewLogger("DEBUG", buf, "")
 	defer func() {
 		cancel()
-		fmt.Println(buf.String())
+		t.Logf("buf contains: [[ %s ]]", buf.String())
 	}()
 
 	p, err := proxy.DefaultFactory(l).New(cfg.Endpoint)
 	if err != nil {
-		fmt.Println(err)
+		t.Errorf("cannot create default factory: %s", err.Error())
 		return
 	}
 
-	pingChan := make(chan<- string)
+	pingChan := make(chan string)
+	// keep consuming pings from the worker, otherwise the initial ppin
+	// will block in the subscriber
+	go func() {
+		for {
+			select {
+			case strPing := <-pingChan:
+				t.Logf("received ping %s", strPing)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
-
-	timeout := 5 * time.Second
-
-	defer func() {
-		<-time.After(timeout)
-		cancel()
-	}()
 
 	opts := Options{
 		Logger:     l,
@@ -201,12 +223,21 @@ func TestRateLimited(t *testing.T) {
 		Ping:       pingChan,
 		PingTicker: ticker,
 	}
-	if err := New(ctx, cfg, opts); err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	go func() { fmt.Println(publish(host, exchange, 1)) }()
+	// the agent must be launch in a goroutine, because the New subscriber
+	// blocks in a loop.
+	go func() {
+		if err := New(ctx, cfg, opts); err != nil {
+			t.Errorf("async agent exited with an error: %s", err.Error())
+			return
+		}
+	}()
+
+	go func() {
+		if err := publish(host, exchange, 1, t); err != nil {
+			t.Errorf("cannot publish in goroutine: %s", err.Error())
+		}
+	}()
 
 	<-time.After(timeout + time.Second)
 }

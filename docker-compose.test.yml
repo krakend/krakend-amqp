@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  amqp:
+    container_name: test_krakend_amqp
+    image: rabbitmq
+    hostname: amqp
+    ports: 
+      - "0.0.0.0:5672:5672"

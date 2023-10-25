@@ -113,6 +113,7 @@ recvLoop:
 		case <-ctx.Done():
 			// agent should stop
 			err = ctx.Err()
+			// TODO: shouldn't we just return ? why we break ? for the log line ?
 			break recvLoop
 		case <-opts.PingTicker.C:
 			// time to ping the router
@@ -131,6 +132,7 @@ recvLoop:
 			case <-ctx.Done(): // agent should stop
 				return
 			case msg, more = <-msgs: // block until a message is read or the chan is closed
+				fmt.Printf("message received: %#v\n", msg)
 				if !more { // channel is closed
 					shouldExit.Store(true)
 					return
@@ -162,6 +164,7 @@ recvLoop:
 
 	opts.Logger.Warning(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Consumer stopped", cfg.Name))
 
+	// the error is not nil, only when the context is Done() and has an error:
 	return err
 }
 
