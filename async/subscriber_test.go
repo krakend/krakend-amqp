@@ -176,7 +176,6 @@ func newFakeHandler(t *testing.T) *fakeHandler {
 }
 
 func TestRateLimited(t *testing.T) {
-
 	h := newFakeHandler(t)
 	s := httptest.NewServer(h)
 
