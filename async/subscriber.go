@@ -10,8 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/juju/ratelimit"
 	"github.com/streadway/amqp"
+
+	ratelimit "github.com/kakendio/krakend-ratelimit/v3"
 
 	"github.com/luraproject/lura/v2/config"
 	"github.com/luraproject/lura/v2/logging"
@@ -88,8 +89,14 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 		if capacity == 0 {
 			capacity = 1
 		}
-		bucket := ratelimit.NewBucketWithRate(cfg.MaxRate, capacity)
-		waitIfRequired = func() { bucket.Wait(1) }
+		bucket := ratelimit.NewTokenBucket(cfg.MaxRate, capacity)
+		// TODO: check if this is Ok:
+		pollingTime := time.Millisecond * 10
+		waitIfRequired = func() {
+			for !bucket.Allow() {
+				time.Sleep(pollingTime)
+			}
+		}
 	}
 
 recvLoop:

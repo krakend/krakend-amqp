@@ -36,6 +36,8 @@ github.com/krakendio/flatmap v0.0.0-20220531185225-4cb0ad6fbedd h1:WeU06zDY02PJ7
 github.com/krakendio/flatmap v0.0.0-20220531185225-4cb0ad6fbedd/go.mod h1:KBuVkiH5BcBFRa5A1HdSHDn8a8LzsyRTKZArX0vqTbo=
 github.com/krakendio/flatmap v1.1.1 h1:rGBNVpBY0pMk6cLOwerVzoKY4HELnpu0xvqB231lOCQ=
 github.com/krakendio/flatmap v1.1.1/go.mod h1:KBuVkiH5BcBFRa5A1HdSHDn8a8LzsyRTKZArX0vqTbo=
+github.com/krakendio/krakend-ratelimit/v3 v3.0.0 h1:ZQhq3OnWJpp5mcfmJ/6ISAxLckd9GdoN5ws7Qk2mzyw=
+github.com/krakendio/krakend-ratelimit/v3 v3.0.0/go.mod h1:hoArUcHlz8hlU7oAtqmsOCBs8ZomF1sz2I3w7f2XX+U=
 github.com/leodido/go-urn v1.2.0/go.mod h1:+8+nEpDfqqsY+g338gtMEUOtuK+4dEMhiQEgxpxOKII=
 github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ictyFfxY=
 github.com/luraproject/lura/v2 v2.0.0-20220601150625-abb94fb9730d h1:XmVeK0wbQ/cY2yQP0uH7ztF5wzpgBLv4oFlVUFWZ0Bo=
@@ -44,6 +46,7 @@ github.com/luraproject/lura/v2 v2.0.0 h1:nfIr4a8XLMECaPQBpGSWxXhNAya7JQwGa3kzLRy
 github.com/luraproject/lura/v2 v2.0.0/go.mod h1:1FhL+5a9uH6o7zMNstXlcjznL5yt2lZ9Q8efanmvw9w=
 github.com/luraproject/lura/v2 v2.0.5 h1:Mc4uj37s7mv6qRLy+Uo983CiaITPSVJYooeUilbiD+k=
 github.com/luraproject/lura/v2 v2.0.5/go.mod h1:r2N4j89Snm1j+Y9CCa9cYR1T2ETRL0E4y9P+DgymqX4=
+github.com/luraproject/lura/v2 v2.2.8/go.mod h1:VFj2EuOq4W/AqQY96Si3/D9vUrNups+s/XoXOHhjSvs=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
