@@ -143,7 +143,8 @@ func publish(host, exchange string, iterations int, t *testing.T) error {
 			return fmt.Errorf("cannot publish on exchange: %s, err: %s", exchange, err.Error())
 		} else {
 			if t != nil {
-				t.Logf("message published: %s", body)
+				t.Logf("message published: %s  (exchange: %s, topic: %s)",
+					body, exchange, "foo.bar")
 			}
 		}
 	}
@@ -185,6 +186,7 @@ func TestRateLimited(t *testing.T) {
 				"prefetch_count": 1,
 			},
 		},
+		Workers: 1,
 	}
 
 	buf := new(bytes.Buffer)
@@ -207,7 +209,7 @@ func TestRateLimited(t *testing.T) {
 		for {
 			select {
 			case strPing := <-pingChan:
-				t.Logf("received ping %s", strPing)
+				t.Logf("received ping [%s]", strPing)
 			case <-ctx.Done():
 				return
 			}
@@ -227,6 +229,8 @@ func TestRateLimited(t *testing.T) {
 	// the agent must be launch in a goroutine, because the New subscriber
 	// blocks in a loop.
 	go func() {
+		t.Logf("New cfg: %#v", cfg)
+		t.Logf("New opts: %#v", opts)
 		if err := New(ctx, cfg, opts); err != nil {
 			t.Errorf("async agent exited with an error: %s", err.Error())
 			return

@@ -78,6 +78,9 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 	opts.Ping <- cfg.Name
 
 	shouldAck := newProcessor(ctx, cfg, opts.Logger, opts.Proxy)
+	// TODO !
+	// WARNING: if the number of workers is 0, this will block!
+	// we probably need to check that the minimum amount of workers is 1
 	sem := make(chan struct{}, cfg.Workers)
 	var shouldExit atomic.Value
 	shouldExit.Store(false)
@@ -130,9 +133,10 @@ recvLoop:
 
 			select {
 			case <-ctx.Done(): // agent should stop
+				fmt.Printf("\n\n this goroutine got no message\n")
 				return
 			case msg, more = <-msgs: // block until a message is read or the chan is closed
-				fmt.Printf("message received: %#v\n", msg)
+				fmt.Printf("\n\nmessage received: %#v\n", msg)
 				if !more { // channel is closed
 					shouldExit.Store(true)
 					return
