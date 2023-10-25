@@ -12,7 +12,7 @@ import (
 
 	"github.com/streadway/amqp"
 
-	ratelimit "github.com/kakendio/krakend-ratelimit/v3"
+	ratelimit "github.com/krakendio/krakend-ratelimit/v3"
 
 	"github.com/luraproject/lura/v2/config"
 	"github.com/luraproject/lura/v2/logging"
