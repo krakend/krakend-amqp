@@ -6,6 +6,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -151,7 +154,32 @@ func publish(host, exchange string, iterations int, t *testing.T) error {
 	return nil
 }
 
+type fakeHandler struct {
+	Received chan int
+	t        *testing.T
+}
+
+func (h *fakeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	b, _ := io.ReadAll(r.Body)
+	if len(b) > 0 && h.t != nil {
+		h.t.Logf("received body: %s", b)
+	}
+	w.Write(b)
+	h.Received <- 1
+}
+
+func newFakeHandler(t *testing.T) *fakeHandler {
+	return &fakeHandler{
+		Received: make(chan int, 100),
+		t:        t,
+	}
+}
+
 func TestRateLimited(t *testing.T) {
+
+	h := newFakeHandler(t)
+	s := httptest.NewServer(h)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	// limit the running time of this test:
 	timeout := 5 * time.Second
@@ -170,7 +198,7 @@ func TestRateLimited(t *testing.T) {
 			Backend: []*config.Backend{
 				{
 					URLPattern: "/__debug/",
-					Host:       []string{"http://localhost:8000"},
+					Host:       []string{s.URL},
 					Decoder:    encoding.JSONDecoder,
 				},
 			},
@@ -238,10 +266,19 @@ func TestRateLimited(t *testing.T) {
 	}()
 
 	go func() {
-		if err := publish(host, exchange, 1, t); err != nil {
-			t.Errorf("cannot publish in goroutine: %s", err.Error())
+		for i := 0; i < 3; i++ {
+			if err := publish(host, exchange, 1, t); err != nil {
+				t.Errorf("cannot publish in goroutine: %s", err.Error())
+			} else {
+				t.Logf("pu pu pu")
+			}
 		}
 	}()
 
-	<-time.After(timeout + time.Second)
+	select {
+	case <-time.After(timeout + time.Second):
+		t.Errorf("timed out at the end")
+	case <-h.Received:
+		t.Logf("test passed")
+	}
 }
