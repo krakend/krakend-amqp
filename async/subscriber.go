@@ -75,12 +75,20 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 	defer closeF()
 
 	// initial ping
+	if cap(opts.Ping) < 1 {
+		opts.Logger.Warning(
+			fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Ping channel with 0 capacity might block this async agent",
+				cfg.Name))
+	}
 	opts.Ping <- cfg.Name
 
 	shouldAck := newProcessor(ctx, cfg, opts.Logger, opts.Proxy)
-	// TODO !
-	// WARNING: if the number of workers is 0, this will block!
-	// we probably need to check that the minimum amount of workers is 1
+	if cfg.Workers < 1 {
+		// If the number of workers is 0, this
+		// we probably need to check that the minimum amount of workers is 1
+		opts.Logger.Error(
+			fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] With less than 1 worker this agent does no work", cfg.Name))
+	}
 	sem := make(chan struct{}, cfg.Workers)
 	var shouldExit atomic.Value
 	shouldExit.Store(false)
@@ -93,9 +101,8 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error {
 			capacity = 1
 		}
 		bucket := ratelimit.NewTokenBucket(cfg.MaxRate, capacity)
-		// We wait enough time to allow to
-		// have at least an extra token (even some other goroutine
-		// might have consumed it)
+		// We wait enough time to allow to have at least an extra token
+		// (even some other goroutine might have consumed while we wait)
 		pollingTime := time.Nanosecond * time.Duration(1e9/cfg.MaxRate)
 		waitIfRequired = func() {
 			for !bucket.Allow() {
@@ -116,7 +123,6 @@ recvLoop:
 		case <-ctx.Done():
 			// agent should stop
 			err = ctx.Err()
-			// TODO: shouldn't we just return ? why we break ? for the log line ?
 			break recvLoop
 		case <-opts.PingTicker.C:
 			// time to ping the router
