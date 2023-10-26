@@ -162,23 +162,31 @@ func TestNotRateLimited(t *testing.T) {
 		asyncAgentErr = New(ctx, cfg, opts)
 	}()
 
-	// we publish an event
-	go func() {
-		// TODO: HERE THERE IS AN ERROR !, if we only publish one message
-		// the test fails
-		for i := 0; i < 2; i++ {
-			if err := publish(host, exchange, 1, fmt.Sprintf("hello %d", i)); err != nil {
-				t.Errorf("cannot publish in goroutine: %s", err.Error())
-			}
-		}
-	}()
+	// lets put a small wait, to let the service start
+	time.Sleep(time.Second)
 
-	timeout := time.Second * 5
+	// we publish an event
+	/*
+		go func() {
+			// TODO: HERE THERE IS AN ERROR !, if we only publish one message
+			// the test fails
+			for i := 0; i < 1; i++ {
+				if err := publish(host, exchange, 1, fmt.Sprintf("hello %d", i)); err != nil {
+					t.Errorf("cannot publish in goroutine: %s", err.Error())
+				}
+			}
+		}()
+	*/
+	if err := publish(host, exchange, 1, "hello 0"); err != nil {
+		t.Errorf("cannot publish event: %s", err.Error())
+	}
+
+	timeout := time.Second * 6
 	select {
 	case <-time.After(timeout):
 		t.Errorf("timed out at the end")
+		return
 	case <-h.Received:
-		t.Logf("test passed")
 	}
 
 	if asyncAgentErr != nil {
@@ -186,6 +194,18 @@ func TestNotRateLimited(t *testing.T) {
 	}
 	cancel()
 	// now, we do a clean shutdown
+
+	d := h.Data(0)
+	if len(d) == 0 {
+		t.Errorf("empty data received")
+		return
+	}
+
+	want := `{"msg":"hello 0"}`
+	got := string(d)
+	if got != want {
+		t.Errorf("want: '%s' got '%s'", want, got)
+	}
 }
 
 func TestRateLimited(t *testing.T) {
