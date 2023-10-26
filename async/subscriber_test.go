@@ -165,18 +165,6 @@ func TestNotRateLimited(t *testing.T) {
 	// lets put a small wait, to let the service start
 	time.Sleep(time.Second)
 
-	// we publish an event
-	/*
-		go func() {
-			// TODO: HERE THERE IS AN ERROR !, if we only publish one message
-			// the test fails
-			for i := 0; i < 1; i++ {
-				if err := publish(host, exchange, 1, fmt.Sprintf("hello %d", i)); err != nil {
-					t.Errorf("cannot publish in goroutine: %s", err.Error())
-				}
-			}
-		}()
-	*/
 	if err := publish(host, exchange, 1, "hello 0"); err != nil {
 		t.Errorf("cannot publish event: %s", err.Error())
 	}
@@ -240,6 +228,7 @@ func TestRateLimited(t *testing.T) {
 			},
 		},
 		Workers: 1,
+		MaxRate: 1,
 	}
 
 	buf := new(bytes.Buffer)
@@ -267,7 +256,6 @@ func TestRateLimited(t *testing.T) {
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
-
 	opts := Options{
 		Logger:     l,
 		Proxy:      p,
@@ -275,6 +263,8 @@ func TestRateLimited(t *testing.T) {
 		PingTicker: ticker,
 	}
 
+	// lets put a small wait, to let the service start
+	time.Sleep(time.Second)
 	// the agent must be launch in a goroutine, because the New subscriber
 	// blocks in a loop.
 	go func() {
@@ -285,21 +275,28 @@ func TestRateLimited(t *testing.T) {
 	}()
 
 	go func() {
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 10; i++ {
 			if err := publish(host, exchange, 1, fmt.Sprintf("hello %d", i)); err != nil {
 				t.Errorf("cannot publish in goroutine: %s", err.Error())
 			}
 		}
 	}()
 
-	timeout := time.Second * 5
-	select {
-	case <-time.After(timeout):
-		t.Errorf("timed out at the end")
-	case <-h.Received:
-		t.Logf("test passed")
+	after := time.After(time.Second * 3)
+	keepWorking := true
+	numProcessed := 0
+	for keepWorking {
+		select {
+		case <-after:
+			keepWorking = false
+		case <-h.Received:
+			numProcessed++
+		}
 	}
 
 	cancel()
 	// now, we do a clean shutdown
+	if numProcessed > 3 {
+		t.Errorf("in 3 seconds it has processed %d events", numProcessed)
+	}
 }
