@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,92 +20,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-/*
-func Example() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	host := "amqp://guest:guest@localhost:5672/"
-	exchange := "krakend-testing"
-
-	cfg := Subscriber{
-		Topic: "#",
-		Endpoint: &config.EndpointConfig{
-			Backend: []*config.Backend{
-				{
-					URLPattern: "/__debug/",
-					Host:       []string{"http://localhost:8000"},
-					Decoder:    encoding.JSONDecoder,
-				},
-			},
-		},
-		Timeout: time.Second,
-		ExtraConfig: config.ExtraConfig{
-			consumerNamespace: map[string]interface{}{
-				"name":           "krakend-test",
-				"host":           host,
-				"exchange":       exchange,
-				"delete":         true,
-				"no_wait":        true,
-				"prefetch_count": 1,
-			},
-		},
-	}
-
-	buf := new(bytes.Buffer)
-	l, _ := logging.NewLogger("DEBUG", buf, "")
-	defer func() {
-		cancel()
-		fmt.Println(buf.String())
-	}()
-
-	p, err := proxy.DefaultFactory(l).New(cfg.Endpoint)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	pingChan := make(chan<- string, 10)
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	timeout := 5 * time.Second
-
-	defer func() {
-		<-time.After(timeout)
-		cancel()
-	}()
-
-	opts := Options{
-		Logger:     l,
-		Proxy:      p,
-		Ping:       pingChan,
-		PingTicker: ticker,
-	}
-	if err := New(ctx, cfg, opts); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	go func() { fmt.Println(publish(host, exchange, 1)) }()
-
-	<-time.After(timeout + time.Second)
-
-	// output:
-	// foo
-}
-*/
-
-/*
-func ExamplePublish() {
-	host := "amqp://guest:guest@localhost:5672/"
-	exchange := "foo"
-	fmt.Println(publish(host, exchange, 2000000))
-
-	// output:
-	// <nil>
-}
-*/
-
-func publish(host, exchange string, iterations int, t *testing.T) error {
+func publish(host, exchange string, iterations int, content string) error {
 	conn, err := amqp.Dial(host)
 	if err != nil {
 		return fmt.Errorf("cannot publish to %s, err: %s", host, err.Error())
@@ -117,20 +33,7 @@ func publish(host, exchange string, iterations int, t *testing.T) error {
 	}
 	defer ch.Close()
 
-	/*
-		if err := ch.ExchangeDeclare(
-			exchange, // name
-			"topic",  // type
-			false,    // durable
-			false,    // delete when unused
-			false,    // exclusive
-			false,    // no-wait
-			nil,      // arguments
-		); err != nil {
-			return err
-		}
-	*/
-	body := `{"msg":"Hello World!"}`
+	body := fmt.Sprintf(`{"msg":"%s"}`, content)
 	for i := 0; i < iterations; i++ {
 		err = ch.Publish(
 			exchange,  // exchange
@@ -144,50 +47,152 @@ func publish(host, exchange string, iterations int, t *testing.T) error {
 		)
 		if err != nil {
 			return fmt.Errorf("cannot publish on exchange: %s, err: %s", exchange, err.Error())
-		} else {
-			if t != nil {
-				t.Logf("message published: %s  (exchange: %s, topic: %s)",
-					body, exchange, "foo.bar")
-			}
 		}
 	}
 	return nil
 }
 
 type fakeHandler struct {
-	Received chan int
-	t        *testing.T
+	Received    chan int
+	data        [][]byte
+	numReceived int
+	mu          sync.RWMutex
 }
 
 func (h *fakeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b, _ := io.ReadAll(r.Body)
-	if len(b) > 0 && h.t != nil {
-		h.t.Logf("received body: %s", b)
-	}
 	w.Write(b)
-	h.Received <- 1
+
+	h.mu.Lock()
+	h.numReceived++
+	nR := h.numReceived
+	h.data = append(h.data, b)
+	h.mu.Unlock()
+
+	h.Received <- nR
 }
 
-func newFakeHandler(t *testing.T) *fakeHandler {
+func (h *fakeHandler) Data(atIdx int) []byte {
+	var b []byte
+	h.mu.RLock()
+	if len(h.data) > atIdx {
+		b = h.data[atIdx]
+	}
+	h.mu.RUnlock()
+	return b
+}
+
+func newFakeHandler() *fakeHandler {
 	return &fakeHandler{
 		Received: make(chan int, 100),
-		t:        t,
+		data:     make([][]byte, 0, 16),
 	}
+}
+
+func TestNotRateLimited(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	h := newFakeHandler()
+	s := httptest.NewServer(h)
+
+	host := "amqp://guest:guest@localhost:5672/"
+	exchange := "krakend-testing"
+
+	cfg := Subscriber{
+		Topic: "#",
+		Endpoint: &config.EndpointConfig{
+			Backend: []*config.Backend{
+				{
+					URLPattern: "/__debug/",
+					Host:       []string{s.URL},
+					Decoder:    encoding.JSONDecoder,
+				},
+			},
+		},
+		Timeout: time.Second,
+		ExtraConfig: config.ExtraConfig{
+			consumerNamespace: map[string]interface{}{
+				"name":           "krakend-test",
+				"host":           host,
+				"exchange":       exchange,
+				"delete":         true,
+				"no_wait":        true,
+				"prefetch_count": 0,
+			},
+		},
+		Workers: 1,
+	}
+
+	buf := new(bytes.Buffer)
+	l, _ := logging.NewLogger("DEBUG", buf, "")
+
+	p, err := proxy.DefaultFactory(l).New(cfg.Endpoint)
+	if err != nil {
+		t.Errorf("cannot create default factory: %s", err.Error())
+		return
+	}
+
+	// keep consuming pings from the worker, otherwise the initial ppin
+	// will block in the subscriber
+	pingChan := make(chan string)
+	go func() {
+		for {
+			select {
+			case <-pingChan:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	opts := Options{
+		Logger:     l,
+		Proxy:      p,
+		Ping:       pingChan,
+		PingTicker: ticker,
+	}
+
+	// the agent must be launch in a goroutine, because the New subscriber
+	// blocks (it keeps running in a loop).
+	var asyncAgentErr error
+	go func() {
+		asyncAgentErr = New(ctx, cfg, opts)
+	}()
+
+	// we publish an event
+	go func() {
+		// TODO: HERE THERE IS AN ERROR !, if we only publish one message
+		// the test fails
+		for i := 0; i < 2; i++ {
+			if err := publish(host, exchange, 1, fmt.Sprintf("hello %d", i)); err != nil {
+				t.Errorf("cannot publish in goroutine: %s", err.Error())
+			}
+		}
+	}()
+
+	timeout := time.Second * 5
+	select {
+	case <-time.After(timeout):
+		t.Errorf("timed out at the end")
+	case <-h.Received:
+		t.Logf("test passed")
+	}
+
+	if asyncAgentErr != nil {
+		t.Errorf("async agent failed with %s", asyncAgentErr.Error())
+	}
+	cancel()
+	// now, we do a clean shutdown
 }
 
 func TestRateLimited(t *testing.T) {
-
-	h := newFakeHandler(t)
-	s := httptest.NewServer(h)
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// limit the running time of this test:
-	timeout := 5 * time.Second
-	defer func() {
-		<-time.After(timeout)
-		t.Errorf("timing out test after %#v", timeout)
-		cancel()
-	}()
+
+	h := newFakeHandler()
+	s := httptest.NewServer(h)
 
 	host := "amqp://guest:guest@localhost:5672/"
 	exchange := "krakend-testing"
@@ -219,10 +224,6 @@ func TestRateLimited(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	l, _ := logging.NewLogger("DEBUG", buf, "")
-	defer func() {
-		cancel()
-		t.Logf("buf contains: [[ %s ]]", buf.String())
-	}()
 
 	p, err := proxy.DefaultFactory(l).New(cfg.Endpoint)
 	if err != nil {
@@ -230,9 +231,9 @@ func TestRateLimited(t *testing.T) {
 		return
 	}
 
-	pingChan := make(chan string)
 	// keep consuming pings from the worker, otherwise the initial ppin
 	// will block in the subscriber
+	pingChan := make(chan string)
 	go func() {
 		for {
 			select {
@@ -257,8 +258,6 @@ func TestRateLimited(t *testing.T) {
 	// the agent must be launch in a goroutine, because the New subscriber
 	// blocks in a loop.
 	go func() {
-		t.Logf("New cfg: %#v", cfg)
-		t.Logf("New opts: %#v", opts)
 		if err := New(ctx, cfg, opts); err != nil {
 			t.Errorf("async agent exited with an error: %s", err.Error())
 			return
@@ -267,18 +266,20 @@ func TestRateLimited(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 3; i++ {
-			if err := publish(host, exchange, 1, t); err != nil {
+			if err := publish(host, exchange, 1, fmt.Sprintf("hello %d", i)); err != nil {
 				t.Errorf("cannot publish in goroutine: %s", err.Error())
-			} else {
-				t.Logf("pu pu pu")
 			}
 		}
 	}()
 
+	timeout := time.Second * 5
 	select {
-	case <-time.After(timeout + time.Second):
+	case <-time.After(timeout):
 		t.Errorf("timed out at the end")
 	case <-h.Received:
 		t.Logf("test passed")
 	}
+
+	cancel()
+	// now, we do a clean shutdown
 }

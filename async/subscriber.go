@@ -133,10 +133,8 @@ recvLoop:
 
 			select {
 			case <-ctx.Done(): // agent should stop
-				fmt.Printf("\n\n this goroutine got no message\n")
 				return
 			case msg, more = <-msgs: // block until a message is read or the chan is closed
-				fmt.Printf("\n\nmessage received: %#v\n", msg)
 				if !more { // channel is closed
 					shouldExit.Store(true)
 					return
