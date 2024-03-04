@@ -37,6 +37,10 @@ type backendFactory struct {
 }
 
 func (f backendFactory) New(remote *config.Backend) proxy.Proxy {
+	if prxy, err := f.initRPC(f.ctx, remote); err == nil {
+		return prxy
+	}
+
 	if prxy, err := f.initConsumer(f.ctx, remote); err == nil {
 		return prxy
 	}
