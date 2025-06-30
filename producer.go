@@ -76,7 +76,7 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		connHandler.conn.Close()
 	}()
 
-	return func(ctx context.Context, r *proxy.Request) (*proxy.Response, error) {
+	return func(_ context.Context, r *proxy.Request) (*proxy.Response, error) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
