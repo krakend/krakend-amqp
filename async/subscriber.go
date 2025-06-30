@@ -163,7 +163,7 @@ recvLoop:
 				return
 			}
 
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, !consumrCfg.NackDiscard); err != nil {
 				opts.Logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Nack: %s", cfg.Name, err))
 				shouldExit.Store(true)
 			}
@@ -188,6 +188,7 @@ type consumerCfg struct {
 	PrefetchSize  int    `json:"prefetch_size"`
 	AutoACK       bool   `json:"auto_ack"`
 	NoLocal       bool   `json:"no_local"`
+	NackDiscard   bool   `json:"nack_discard"`
 }
 
 type consumerOptions struct {
