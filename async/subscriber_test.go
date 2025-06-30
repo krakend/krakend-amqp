@@ -17,7 +17,7 @@ import (
 	"github.com/luraproject/lura/v2/encoding"
 	"github.com/luraproject/lura/v2/logging"
 	"github.com/luraproject/lura/v2/proxy"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func publish(host, exchange string, iterations int, content string) error {
