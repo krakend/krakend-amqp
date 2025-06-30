@@ -45,7 +45,7 @@ type Options struct {
 
 // New instantiates and executes an async agent consuming from a rabbitmq
 // service. The caller is responsible for reconnections.
-func New(ctx context.Context, cfg Subscriber, opts Options) error {
+func New(ctx context.Context, cfg Subscriber, opts Options) error { // skipcq: GO-R1005
 	v, ok := cfg.ExtraConfig[consumerNamespace]
 	if !ok {
 		return ErrNoConsumerCfgDefined
