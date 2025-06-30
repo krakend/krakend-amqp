@@ -166,6 +166,8 @@ recvLoop:
 			if err := msg.Nack(false, !consumrCfg.NackDiscard); err != nil {
 				opts.Logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Nack: %s", cfg.Name, err))
 				shouldExit.Store(true)
+			} else if consumrCfg.NackDiscard {
+				opts.Logger.Warning(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Nack: message discarded from queue %q", cfg.Name, options.Name))
 			}
 		}()
 	}

@@ -84,6 +84,9 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 			err := remote.Decoder(bytes.NewBuffer(msg.Body), &data)
 			if err != nil && err != io.EOF {
 				msg.Nack(false, !cfg.NackDiscard)
+				if cfg.NackDiscard {
+					f.logger.Warning(logPrefix, "Nack: message discarded from queue '"+cfg.Name+"'")
+				}
 				return nil, err
 			}
 
