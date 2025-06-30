@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/krakendio/krakend-ratelimit/v3 v3.0.0
 	github.com/luraproject/lura/v2 v2.2.8
-	github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d
+	github.com/rabbitmq/amqp091-go v1.10.0
 )
 
 require (

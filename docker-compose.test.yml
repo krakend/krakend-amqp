@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   amqp:
     container_name: test_krakend_amqp
