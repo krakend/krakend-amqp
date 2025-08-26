@@ -24,8 +24,9 @@ var (
 
 type consumerCfg struct {
 	queueCfg
-	AutoACK bool `json:"auto_ack"`
-	NoLocal bool `json:"no_local"`
+	AutoACK     bool `json:"auto_ack"`
+	NoLocal     bool `json:"no_local"`
+	NackDiscard bool `json:"nack_discard"`
 }
 
 func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend) (proxy.Proxy, error) {
@@ -82,7 +83,10 @@ func (f backendFactory) initConsumer(ctx context.Context, remote *config.Backend
 			var data map[string]interface{}
 			err := remote.Decoder(bytes.NewBuffer(msg.Body), &data)
 			if err != nil && err != io.EOF {
-				msg.Nack(false, true)
+				msg.Nack(false, !cfg.NackDiscard)
+				if cfg.NackDiscard {
+					f.logger.Debug(logPrefix, "Nack: message discarded from queue '"+cfg.Name+"'")
+				}
 				return nil, err
 			}
 
