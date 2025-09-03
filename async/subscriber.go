@@ -45,7 +45,7 @@ type Options struct {
 
 // New instantiates and executes an async agent consuming from a rabbitmq
 // service. The caller is responsible for reconnections.
-func New(ctx context.Context, cfg Subscriber, opts Options) error {
+func New(ctx context.Context, cfg Subscriber, opts Options) error { // skipcq: GO-R1005
 	v, ok := cfg.ExtraConfig[consumerNamespace]
 	if !ok {
 		return ErrNoConsumerCfgDefined
@@ -163,9 +163,11 @@ recvLoop:
 				return
 			}
 
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, !consumrCfg.NackDiscard); err != nil {
 				opts.Logger.Error(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Nack: %s", cfg.Name, err))
 				shouldExit.Store(true)
+			} else if consumrCfg.NackDiscard {
+				opts.Logger.Debug(fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Nack: message discarded from queue %q", cfg.Name, options.Name))
 			}
 		}()
 	}
@@ -188,6 +190,7 @@ type consumerCfg struct {
 	PrefetchSize  int    `json:"prefetch_size"`
 	AutoACK       bool   `json:"auto_ack"`
 	NoLocal       bool   `json:"no_local"`
+	NackDiscard   bool   `json:"nack_discard"`
 }
 
 type consumerOptions struct {
