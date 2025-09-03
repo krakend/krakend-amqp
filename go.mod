@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/krakend/krakend-ratelimit/v3 v3.3.0
 	github.com/luraproject/lura/v2 v2.11.0
-	github.com/streadway/amqp v0.0.0-20190312223743-14f78b41ce6d
+	github.com/rabbitmq/amqp091-go v1.10.0
 )
 
 require (
