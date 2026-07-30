@@ -12,11 +12,11 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	"github.com/luraproject/lura/v2/config"
-	"github.com/luraproject/lura/v2/proxy"
+	"github.com/luraproject/lura/v3/config"
+	"github.com/luraproject/lura/v3/proxy"
 )
 
-const producerNamespace = "github.com/devopsfaith/krakend-amqp/produce"
+const producerNamespace = "backend/amqp/producer"
 
 var errNoProducerCfgDefined = errors.New("no amqp producer defined")
 

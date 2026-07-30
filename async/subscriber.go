@@ -14,9 +14,9 @@ import (
 
 	ratelimit "github.com/krakend/krakend-ratelimit/v3"
 
-	"github.com/luraproject/lura/v2/config"
-	"github.com/luraproject/lura/v2/logging"
-	"github.com/luraproject/lura/v2/proxy"
+	"github.com/luraproject/lura/v3/config"
+	"github.com/luraproject/lura/v3/logging"
+	"github.com/luraproject/lura/v3/proxy"
 )
 
 // Subscriber defines the configuration of a single subscriber/consumer to be initialized
@@ -34,7 +34,7 @@ type Subscriber struct {
 	MaxRate     float64
 }
 
-const consumerNamespace = "github.com/devopsfaith/krakend-amqp/agent"
+const consumerNamespace = "async/amqp"
 
 type Options struct {
 	Logger     logging.Logger
@@ -78,7 +78,8 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error { // skipcq: G
 	if cap(opts.Ping) < 1 {
 		opts.Logger.Warning(
 			fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] Ping channel with 0 capacity might block this async agent",
-				cfg.Name))
+				cfg.Name),
+		)
 	}
 	opts.Ping <- cfg.Name
 
@@ -87,7 +88,8 @@ func New(ctx context.Context, cfg Subscriber, opts Options) error { // skipcq: G
 		// If the number of workers is 0, this
 		// we probably need to check that the minimum amount of workers is 1
 		opts.Logger.Error(
-			fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] With less than 1 worker this agent does no work", cfg.Name))
+			fmt.Sprintf("[SERVICE: AsyncAgent][AMQP][%s] With less than 1 worker this agent does no work", cfg.Name),
+		)
 	}
 	sem := make(chan struct{}, cfg.Workers)
 	var shouldExit atomic.Value
