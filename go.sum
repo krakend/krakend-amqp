@@ -1,7 +1,7 @@
 github.com/krakend/flatmap v1.2.0 h1:4NPncAKH7Ca/t878kbGlc/LPWLa+m4sgBhs8aT2Q1SY=
 github.com/krakend/flatmap v1.2.0/go.mod h1:FyCOoggdVlWr31+aQaOFvBxlMgYfCE5yuwInLbW1/jM=
-github.com/krakend/krakend-ratelimit/v3 v3.3.0 h1:a4fAx3tCFyAlMlqHYMRVriH+hM1vpiOLReWg9UvHVME=
-github.com/krakend/krakend-ratelimit/v3 v3.3.0/go.mod h1:/qBV2X44hdlInPaAEYR8trylGl/PlTRfyoA97Y6alVQ=
+github.com/krakend/krakend-ratelimit/v4 v4.0.0-20260730143053-a3ce2811a646 h1:3K4JE2YqRWyuZ2IZGT8cVx35a7QyqREGyDkQOTTSgu4=
+github.com/krakend/krakend-ratelimit/v4 v4.0.0-20260730143053-a3ce2811a646/go.mod h1:tD3xz+XTi7qYAbkZtXVdvQmylmdOFY4Wn6OE5Aksi2o=
 github.com/luraproject/lura/v3 v3.0.0-20260729144624-4b3057d09348 h1:YRwdVhhjjdSqcPhBVXwbceXV6GUFcTWY9iFasOODEUE=
 github.com/luraproject/lura/v3 v3.0.0-20260729144624-4b3057d09348/go.mod h1:rg4I/Oe8nxfEf5V5OpaZj1dLI8HLacHA55HO3x1S5k4=
 github.com/rabbitmq/amqp091-go v1.10.0 h1:STpn5XsHlHGcecLmMFCtg7mqq0RnD+zFr4uzukfVhBw=
