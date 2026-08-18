@@ -11,11 +11,11 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	"github.com/luraproject/lura/v2/config"
-	"github.com/luraproject/lura/v2/proxy"
+	"github.com/luraproject/lura/v3/config"
+	"github.com/luraproject/lura/v3/proxy"
 )
 
-const consumerNamespace = "github.com/devopsfaith/krakend-amqp/consume"
+const consumerNamespace = "backend/amqp/consumer"
 
 var (
 	errNoConsumerCfgDefined = errors.New("no amqp consumer defined")

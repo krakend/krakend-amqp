@@ -8,10 +8,10 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	"github.com/luraproject/lura/v2/backoff"
-	"github.com/luraproject/lura/v2/config"
-	"github.com/luraproject/lura/v2/logging"
-	"github.com/luraproject/lura/v2/proxy"
+	"github.com/luraproject/lura/v3/backoff"
+	"github.com/luraproject/lura/v3/config"
+	"github.com/luraproject/lura/v3/logging"
+	"github.com/luraproject/lura/v3/proxy"
 )
 
 var (
