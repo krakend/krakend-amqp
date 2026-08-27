@@ -49,7 +49,9 @@ func (f backendFactory) initProducer(ctx context.Context, remote *config.Backend
 		return proxy.NoopProxy, errNoBackendHostDefined
 	}
 	dns := remote.Host[0]
-	logPrefix := "[BACKEND: " + remote.URLPattern + "][AMQP]"
+	logPrefix := fmt.Sprintf("[BACKEND: %s %s -> %s %s][AMQP]",
+		remote.ParentEndpointMethod, remote.ParentEndpoint,
+		remote.Method, remote.URLPattern)
 
 	cfg, err := getProducerConfig(remote)
 	if err != nil {
