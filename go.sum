@@ -4,8 +4,8 @@ github.com/krakend/krakend-ratelimit/v4 v4.0.0-20260730143053-a3ce2811a646 h1:3K
 github.com/krakend/krakend-ratelimit/v4 v4.0.0-20260730143053-a3ce2811a646/go.mod h1:tD3xz+XTi7qYAbkZtXVdvQmylmdOFY4Wn6OE5Aksi2o=
 github.com/luraproject/lura/v3 v3.0.0-20260729144624-4b3057d09348 h1:YRwdVhhjjdSqcPhBVXwbceXV6GUFcTWY9iFasOODEUE=
 github.com/luraproject/lura/v3 v3.0.0-20260729144624-4b3057d09348/go.mod h1:rg4I/Oe8nxfEf5V5OpaZj1dLI8HLacHA55HO3x1S5k4=
-github.com/rabbitmq/amqp091-go v1.10.0 h1:STpn5XsHlHGcecLmMFCtg7mqq0RnD+zFr4uzukfVhBw=
-github.com/rabbitmq/amqp091-go v1.10.0/go.mod h1:Hy4jKW5kQART1u+JkDTF9YYOQUHXqMuhrgxOEeS7G4o=
+github.com/rabbitmq/amqp091-go v1.13.0 h1:L8NA1WtF76C6KA3LAoufjfLgbist/If1UQYcsOjtxXA=
+github.com/rabbitmq/amqp091-go v1.13.0/go.mod h1:Hy4jKW5kQART1u+JkDTF9YYOQUHXqMuhrgxOEeS7G4o=
 github.com/valyala/fastrand v1.1.0 h1:f+5HkLW4rsgzdNoleUOB69hyT9IlD2ZQh9GyDMfb5G8=
 github.com/valyala/fastrand v1.1.0/go.mod h1:HWqCzkrkg6QXT8V2EXWvXCoow7vLwOFN002oeRzjapQ=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
